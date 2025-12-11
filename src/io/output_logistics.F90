@@ -7,7 +7,8 @@ module m_outputlogistics
   use m_particles
   use m_fields
   use m_readinput, only: getInput
-  use m_helpers, only: computeDensity, computeMomentum, computeEnergyMomentum, computeNpart, computeFluidVelocity, computeFluidDensity, computePrtCurr
+  use m_helpers, only: computeDensity, computeMomentum, computeEnergyMomentum, computeNpart, &
+                       computeFluidVelocity, computeFluidDensity, computePrtCurr
   use m_helpers, only: interpFromFaces, interpFromEdges
   use m_exchangearray, only: exchangeArray
   use m_qednamespace
@@ -31,6 +32,12 @@ contains
     call getInput('output', 'stride', tot_output_stride, 10)
     call getInput('output', 'istep', output_flds_istep, 1)
     call getInput('output', 'smooth_window', output_dens_smooth, 2)
+    if (output_flds_istep <= 0) then
+      if (mpi_rank .eq. 0) then
+        print *, "WARNING: output/istep must be >= 1; forcing to 1 to avoid divide-by-zero in write_tot_flds"
+      end if
+      output_flds_istep = 1
+    end if
 
     call getInput('output', 'flds_write_every', flds_write_every, 1)
     call getInput('output', 'prtl_write_every', prtl_write_every, 1)
@@ -85,10 +92,13 @@ contains
     call getInput('output', 'write_Tii', Tii_output_enable, .false.)
     call getInput('output', 'write_Tij', Tij_output_enable, .false.)
 
-#if defined(HDF5) && defined(MPI08)
-    h5comm = MPI_COMM_WORLD % MPI_VAL
-    h5info = MPI_INFO_NULL % MPI_VAL
-#elif defined(HDF5) && defined(MPI)
+#ifndef HDF5
+    if (flds_tot_enable .or. diag_enable .or. spectra_enable) then
+      call throwError("HDF5 output requested (flds/diag/spec) but code was built without -Dhdf5=ON / parallel HDF5.")
+    end if
+#endif
+
+#ifdef HDF5
     h5comm = MPI_COMM_WORLD
     h5info = MPI_INFO_NULL
 #endif

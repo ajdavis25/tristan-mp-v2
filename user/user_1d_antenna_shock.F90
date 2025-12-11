@@ -224,13 +224,7 @@ contains
     integer, optional, intent(in) :: step
     procedure(spatialDistribution), pointer :: spat_distr_ptr => null()
 
-#ifdef MPI08
-    type(MPI_REQUEST) :: mpi_req
-#endif
-
-#ifdef MPI
     integer :: mpi_req
-#endif
 
   end subroutine userParticleBoundaryConditions
 

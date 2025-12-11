@@ -13,13 +13,7 @@ contains
     implicit none
     integer :: ierr, additional_real, additional_int, additional_int2
 
-#ifdef MPI08
-    type(MPI_DATATYPE), dimension(0:2) :: oldtypes
-#endif
-
-#ifdef MPI
     integer, dimension(0:2) :: oldtypes
-#endif
 
     integer, dimension(0:2) :: blockcounts
     integer(kind=MPI_ADDRESS_KIND), dimension(0:2) :: offsets
@@ -76,15 +70,8 @@ contains
     logical :: should_send, should_recv
     integer(kind=2) :: new_xyz
 
-#ifdef MPI08
-    type(MPI_REQUEST), allocatable :: mpi_req(:)
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer, allocatable :: mpi_req(:)
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     logical, allocatable :: mpi_sendflags(:), mpi_recvflags(:)
 
@@ -352,15 +339,8 @@ contains
     integer :: cnt_recv_enroute
     integer(kind=2) :: new_xyz
 
-#ifdef MPI08
-    type(MPI_REQUEST), allocatable :: mpi_req(:)
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer, allocatable :: mpi_req(:)
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     logical, allocatable :: mpi_sendflags(:), mpi_recvflags(:)
     logical :: quit_loop
@@ -654,15 +634,8 @@ contains
     integer :: ierr, ind1, ind2, ind3, cntr
     integer :: cnt_recv_enroute = 0
 
-#ifdef MPI08
-    type(MPI_REQUEST), allocatable :: mpi_req(:)
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer, allocatable :: mpi_req(:)
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     logical, allocatable :: mpi_sendflags(:), mpi_recvflags(:)
     logical :: quit_loop

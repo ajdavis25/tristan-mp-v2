@@ -198,13 +198,7 @@ contains
     integer :: mpi_sendto, mpi_recvfrom, mpi_tag
     logical :: should_send, should_recv
 
-#ifdef MPI08
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     jx_buff(:, :, :) = 0.0
 
@@ -262,15 +256,8 @@ contains
     integer :: mpi_sendto, mpi_recvfrom, mpi_sendtag, mpi_recvtag
     integer :: mpi_offset
 
-#ifdef MPI08
-    type(MPI_REQUEST), allocatable :: mpi_req(:)
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer, allocatable :: mpi_req(:)
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     logical, allocatable :: mpi_sendflags(:), mpi_recvflags(:)
     logical :: quit_loop
@@ -442,4 +429,3 @@ contains
   end subroutine exchangeArray
 #endif
 end module m_exchangearray
-

@@ -226,13 +226,7 @@ contains
     integer :: mpi_sendto, mpi_recvfrom, mpi_tag
     logical :: should_send, should_recv
 
-#ifdef MPI08
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     if ((.not. exchangeE) .and. (.not. exchangeB)) then
       call throwError('ERROR: `exchangeFields()` called with `.false.` and `.false.`')
@@ -288,15 +282,8 @@ contains
     integer :: mpi_sendto, mpi_recvfrom, mpi_sendtag, mpi_recvtag
     integer :: mpi_offset
 
-#ifdef MPI08
-    type(MPI_REQUEST), allocatable :: mpi_req(:)
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer, allocatable :: mpi_req(:)
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     logical, allocatable :: mpi_sendflags(:), mpi_recvflags(:)
     logical :: quit_loop
@@ -615,13 +602,7 @@ contains
     integer :: i1_send, i2_send, j1_send, j2_send, k1_send, k2_send
     integer :: i_, dummy_, size_, ierr, mpi_tag
 
-#ifdef MPI08
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     if ((mpi_rank .eq. rnk_send) .or. (mpi_rank .eq. rnk_recv)) then
 #ifdef DEBUG
@@ -695,13 +676,7 @@ contains
     integer :: i1_send, i2_send, j1_send, j2_send, k1_send, k2_send
     integer :: j_, dummy_, size_, ierr, mpi_tag
 
-#ifdef MPI08
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     if ((mpi_rank .eq. rnk_send) .or. (mpi_rank .eq. rnk_recv)) then
 #ifdef DEBUG
@@ -775,13 +750,7 @@ contains
     integer :: i1_send, i2_send, j1_send, j2_send, k1_send, k2_send
     integer :: k_, dummy_, size_, ierr, mpi_tag
 
-#ifdef MPI08
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     if ((mpi_rank .eq. rnk_send) .or. (mpi_rank .eq. rnk_recv)) then
 #ifdef DEBUG

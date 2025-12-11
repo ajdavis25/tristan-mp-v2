@@ -140,11 +140,7 @@ contains
     integer(kind=2) :: i, j, k
     real, allocatable :: temp_arr(:, :)
 
-#if defined(MPI08)
-    type(MPI_STATUS) :: istat
-#elif defined(MPI)
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     root_rnk = 0
 
@@ -252,11 +248,7 @@ contains
     integer(kind=2) :: i, j, k
     real, allocatable :: temp_arr(:, :)
 
-#if defined(MPI08)
-    type(MPI_STATUS) :: istat
-#elif defined(MPI)
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     root_rnk = 0
 
@@ -364,11 +356,7 @@ contains
     integer(kind=2) :: i, j, k
     real, allocatable :: temp_arr(:, :)
 
-#if defined(MPI08)
-    type(MPI_STATUS) :: istat
-#elif defined(MPI)
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     root_rnk = 0
 

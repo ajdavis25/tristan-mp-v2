@@ -249,6 +249,18 @@ contains
     implicit none
     integer, intent(in) :: s, ti, tj, tk
     type(prtl_enroute), intent(in) :: enroute
+    character(len=STR_MAX) :: dummy_string
+
+    if (species(s) % prtl_tile(ti, tj, tk) % npart_sp .ge. &
+        species(s) % prtl_tile(ti, tj, tk) % maxptl_sp) then
+      write (dummy_string, '(I5)') s
+      if (resize_tiles) then
+        call reallocTileSize(species(s) % prtl_tile(ti, tj, tk), .true.)
+      else
+        call throwError('ERROR: npart_sp >= maxptl_sp in putEnrouteParticleOnTile for species #'//trim(dummy_string))
+      end if
+    end if
+
     call putParticleOnTile(s, ti, tj, tk, &
                            enroute % xi, enroute % yi, enroute % zi, enroute % dx, enroute % dy, enroute % dz, &
                            enroute % u, enroute % v, enroute % w, &
@@ -382,7 +394,8 @@ contains
               else
                 print *, "DANGER: `maxptl_sp` in tiles too low, consider increasing `maxptl` or turning on `resize_tiles`."
               end if
-            else if ((species(s) % prtl_tile(ti, tj, tk) % npart_sp .lt. (species(s) % prtl_tile(ti, tj, tk) % maxptl_sp * 0.1)) .and. &
+            else if ((species(s) % prtl_tile(ti, tj, tk) % npart_sp .lt. &
+                      (species(s) % prtl_tile(ti, tj, tk) % maxptl_sp * 0.1)) .and. &
                      ((species(s) % prtl_tile(ti, tj, tk) % maxptl_sp * 0.5) .gt. min_tile_nprt)) then
               ! decrease the tile size
               if (resize_tiles .and. shrink_tiles) then

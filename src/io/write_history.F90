@@ -75,7 +75,8 @@ contains
       if (first_step .and. (.not. rst_simulation)) then
         print *, "WRITING HISTORY ON FIRST STEP", filename
         first_step = .false.
-        open (newunit=io, file=filename, status="new", form="formatted", action="write", iostat=stat, iomsg=errmsg)
+        ! use replace so reruns overwrite an existing history file instead of aborting
+        open (newunit=io, file=filename, status="replace", form="formatted", action="write", iostat=stat, iomsg=errmsg)
         if (stat .ne. 0) then
           call throwError("writeHistory: Error opening file: "//trim(errmsg))
         end if

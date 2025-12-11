@@ -22,7 +22,9 @@ contains
 
     call prepareOutput()
 
-    step = tot_output_index
+    ! Use the physical timestep for naming/output cadence so overrides like
+    ! `flds_write_every` align with simulation steps, not the output counter.
+    step = time
 
     if (params_enable) then
       call writeParams(step, time)

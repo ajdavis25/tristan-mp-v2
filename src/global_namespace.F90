@@ -4,16 +4,11 @@
 !...............................................................!
 
 module m_globalnamespace
-#ifdef MPI08
-  use mpi_f08
+#if defined(MPI08) || defined(MPI)
+  use mpi
 #endif
-
 #ifdef HDF5
   use hdf5
-#endif
-
-#ifdef MPI
-  include "mpif.h"
 #endif
 
   integer, parameter :: dprec = kind(1.0d0)
@@ -59,13 +54,7 @@ module m_globalnamespace
   integer :: h5comm, h5info
 #endif
 
-#ifdef MPI08
-  type(MPI_Datatype) :: default_mpi_real
-#endif
-
-#ifdef MPI
   integer :: default_mpi_real
-#endif
 
   ! variables visible globally defined by the user
   real :: global_usr_variable_1, global_usr_variable_2, global_usr_variable_3

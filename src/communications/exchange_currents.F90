@@ -315,13 +315,7 @@ contains
     logical :: should_send, should_recv
     logical, optional, intent(in) :: fill_ghosts_Q
 
-#ifdef MPI08
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     if (present(fill_ghosts_Q)) then
       fill_ghosts = fill_ghosts_Q
@@ -395,15 +389,8 @@ contains
     logical :: fill_ghosts
     logical, optional, intent(in) :: fill_ghosts_Q
 
-#ifdef MPI08
-    type(MPI_REQUEST), allocatable :: mpi_req(:)
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer, allocatable :: mpi_req(:)
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     logical, allocatable :: mpi_sendflags(:), mpi_recvflags(:)
     logical :: quit_loop

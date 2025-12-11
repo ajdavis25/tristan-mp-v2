@@ -274,6 +274,12 @@ contains
 
       !-------------------------------------------------
       ! Tot output
+#ifdef MPI
+      call MPI_BARRIER(MPI_COMM_WORLD, ierr)
+#endif
+      if (mpi_rank .eq. 0) then
+        print *, 'DBG about to writeTotOutput at step', timestep
+      end if
       if ((tot_output_enable) .and. &
           (modulo(timestep, tot_output_interval) .eq. 0) .and. &
           (timestep .ge. tot_output_start)) then

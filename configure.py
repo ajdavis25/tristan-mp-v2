@@ -3,8 +3,9 @@
 
 import sys
 
-if sys.version_info[0] < 3 or sys.version_info[1] < 8:
-    raise Exception("Must be using python 3.8+")
+# Allow python >=3.6 (older clusters may still ship 3.6.x)
+if sys.version_info[0] < 3 or sys.version_info[1] < 6:
+    raise Exception("Must be using python 3.6+")
 
 import argparse
 import glob

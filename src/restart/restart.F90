@@ -47,13 +47,7 @@ contains
 #endif
     integer :: ierr, rnk, rnk_cnt, recv_count = 0
     integer :: dummy(1)
-#ifdef MPI08
-    type(MPI_STATUS) :: istat
-#endif
-
-#ifdef MPI
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     ! determine the directory to write
     if (rst_separate) then

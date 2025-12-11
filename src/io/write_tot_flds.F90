@@ -8,6 +8,8 @@ module m_writetotflds
   use m_aux
   use m_domain
   use m_fields
+  use m_particles, only: species
+  use m_errors, only: throwError
   use m_outputlogistics, only: prepareFieldForOutput, selectFieldForOutput
   implicit none
 
@@ -20,6 +22,25 @@ contains
   subroutine writeFields(step, time)
     implicit none
     integer, intent(in) :: step, time
+#ifdef HDF5
+    integer :: tileX_local, tileY_local, nxb, nyb, nan_bz
+
+    if ((step .eq. 0) .and. (mpi_rank .eq. 0)) then
+      tileX_local = 1
+      tileY_local = 1
+      if (allocated(species)) then
+        tileX_local = species(1) % tile_sx
+        tileY_local = species(1) % tile_sy
+      end if
+      nxb = global_mesh % sx / tileX_local
+      nyb = global_mesh % sy / tileY_local
+      nan_bz = count(.not.(bz == bz))
+      print *, "DEBUG: mx0, my0, tileX, tileY", global_mesh % sx, global_mesh % sy, tileX_local, tileY_local
+      print *, "DEBUG: nxb, nyb = ", nxb, nyb
+      print *, "DEBUG: output_flds_istep =", output_flds_istep
+      print *, "DEBUG: any B-field NaN?", nan_bz
+    end if
+#endif
 #ifdef HDF5
     call writeFields_hdf5(step, time)
 #endif
@@ -104,7 +125,7 @@ contains
     integer, intent(in) :: step, time
     character(len=STR_MAX) :: stepchar, filename
     integer(HID_T) :: file_id, dset_id(100), filespace(100), memspace(100), plist_id
-    integer :: error, f
+    integer :: error, f, ierr
     integer(kind=2) :: i, j, k
     logical :: writing_lgarrQ
     integer :: dataset_rank = 3
@@ -114,6 +135,10 @@ contains
     integer(kind=2) :: i1, j1, k1
 
     call getBlockDimensions(this_meshblock % ptr, starts, offsets, blocks, global_dims)
+#ifdef MPI
+    call MPI_BARRIER(MPI_COMM_WORLD, ierr)
+#endif
+    print *, 'DBG writeFields_hdf5 enter rank', mpi_rank, 'step', step, 'offs=', offsets, 'blocks=', blocks, 'glob=', global_dims
 
     write (stepchar, "(i5.5)") step
     filename = trim(output_dir_flds)//'/flds.tot.'//trim(stepchar)
@@ -164,8 +189,10 @@ contains
       end do
 
       ! Write the dataset collectively
+      print *, 'DBG H5Dwrite start rank', mpi_rank, 'var', trim(fld_vars(f)), 'step', step
       call h5Dwrite_f(dset_id(f), default_h5_real, sm_arr(0:blocks(1) - 1, 0:blocks(2) - 1, 0:blocks(3) - 1), &
                       global_dims, error, file_space_id=filespace(f), mem_space_id=memspace(f), xfer_prp=plist_id)
+      print *, 'DBG H5Dwrite done rank', mpi_rank, 'var', trim(fld_vars(f)), 'step', step
     end do
 
     call h5Pclose_f(plist_id, error)
@@ -183,6 +210,10 @@ contains
     call h5Fclose_f(file_id, error)
     ! Close FORTRAN interfaces and HDF5 library
     call h5close_f(error)
+    print *, 'DBG writeFields_hdf5 exit rank', mpi_rank, 'step', step
+#ifdef MPI
+    call MPI_BARRIER(MPI_COMM_WORLD, ierr)
+#endif
   end subroutine writeFields_hdf5
 #else
   ! serial field output
@@ -202,11 +233,7 @@ contains
     real :: jx0, jy0, jz0
     integer(kind=2) :: i1, j1, k1
 
-#if defined(MPI08)
-    type(MPI_STATUS) :: istat
-#elif defined(MPI)
     integer :: istat(MPI_STATUS_SIZE)
-#endif
 
     ! determine root rank
 #if defined(SLB) || defined(ALB)
@@ -318,6 +345,10 @@ contains
     integer :: i_start, i_end, j_start, j_end, k_start, k_end
     integer :: offset_i, offset_j, offset_k
     integer :: n_i, n_j, n_k, glob_n_i, glob_n_j, glob_n_k
+
+    if (output_flds_istep .le. 0) then
+      call throwError("write_tot_flds: output_flds_istep must be >= 1; check 'output/istep' in input")
+    end if
 
     ! assuming `global_mesh%{x0,y0,z0} .eq. 0`
     this_x0 = meshblock % x0
