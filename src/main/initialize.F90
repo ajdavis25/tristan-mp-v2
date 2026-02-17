@@ -360,12 +360,12 @@ contains
 #endif
     diag_file_name = trim(output_dir_name)//'/'//trim(diag_file_name)
     warn_file_name = trim(output_dir_name)//'/'//trim(warn_file_name)
+    output_dir_spec = trim(output_dir_name)//'/spec'
+    output_dir_flds = trim(output_dir_name)//'/flds'
+    output_dir_prtl = trim(output_dir_name)//'/prtl'
     if (mpi_rank .eq. 0) then
 #ifdef IFPORT
       result = makedirqq(trim(output_dir_name))
-      output_dir_spec = trim(output_dir_name)//'/spec'
-      output_dir_flds = trim(output_dir_name)//'/flds'
-      output_dir_prtl = trim(output_dir_name)//'/prtl'
       result = makedirqq(trim(output_dir_spec))
       result = makedirqq(trim(output_dir_flds))
       result = makedirqq(trim(output_dir_prtl))
@@ -377,9 +377,6 @@ contains
       end if
 #else
       call system('mkdir -p '//trim(output_dir_name))
-      output_dir_spec = trim(output_dir_name)//'/spec'
-      output_dir_flds = trim(output_dir_name)//'/flds'
-      output_dir_prtl = trim(output_dir_name)//'/prtl'
       call system('mkdir -p '//trim(output_dir_spec))
       call system('mkdir -p '//trim(output_dir_flds))
       call system('mkdir -p '//trim(output_dir_prtl))

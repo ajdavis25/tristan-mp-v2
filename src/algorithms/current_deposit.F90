@@ -4,8 +4,25 @@ module m_currentdeposit
   use m_domain
   use m_fields
   use m_particles
+  use m_errors, only: throwError
   implicit none
+
+  logical, save :: deposit_trace_enable = .false.
+  logical, save :: deposit_trace_init = .false.
 contains
+  subroutine maybeEnableDepositTrace()
+    implicit none
+    character(len=32) :: env
+    integer :: stat
+    if (deposit_trace_init) return
+    deposit_trace_init = .true.
+    env = ''
+    call get_environment_variable('TRISTAN_DEPOSIT_TRACE', env, status=stat)
+    if (stat == 0) then
+      if (len_trim(env) > 0 .and. trim(env) /= '0') deposit_trace_enable = .true.
+    end if
+  end subroutine maybeEnableDepositTrace
+
   subroutine resetCurrents()
     implicit none
     jx(:, :, :) = 0; jy(:, :, :) = 0; jz(:, :, :) = 0
@@ -25,6 +42,13 @@ contains
     real :: onemWx1, onemWy1, onemWz1, onemWx2, onemWy2, onemWz2
     real :: Fx1, Fy1, Fz1, Fx2, Fy2, Fz2
     real, pointer, contiguous :: pt_u(:), pt_v(:), pt_w(:)
+    integer :: ilb, iub, jlb, jub, klb, kub
+
+    call maybeEnableDepositTrace()
+
+    ilb = lbound(jx, 1); iub = ubound(jx, 1)
+    jlb = lbound(jx, 2); jub = ubound(jx, 2)
+    klb = lbound(jx, 3); kub = ubound(jx, 3)
 
     do s = 1, nspec ! loop over species
       if ((species(s) % ch_sp .eq. 0) .or. (.not. species(s) % deposit_sp)) cycle
@@ -73,6 +97,26 @@ contains
 #endif
 
               weighted_charge = pt_wei(p) * temp_charge
+
+              if (deposit_trace_enable) then
+                if ((x1 /= x1) .or. (x2 /= x2) .or. (y1 /= y1) .or. (y2 /= y2) .or. (z1 /= z1) .or. (z2 /= z2)) then
+                  print *, "DEPOSIT_TRACE: NaN in trajectory coords", " s=", s, " p=", p, &
+                           " x1/x2=", x1, x2, " y1/y2=", y1, y2, " z1/z2=", z1, z2
+                  call throwError("DEPOSIT_TRACE: NaN in x1/x2/y1/y2/z1/z2")
+                end if
+
+                if ((i1 < ilb) .or. (i1 > iub) .or. (i1p1 < ilb) .or. (i1p1 > iub) .or. &
+                    (i2 < ilb) .or. (i2 > iub) .or. (i2p1 < ilb) .or. (i2p1 > iub) .or. &
+                    (j1 < jlb) .or. (j1 > jub) .or. (j1p1 < jlb) .or. (j1p1 > jub) .or. &
+                    (j2 < jlb) .or. (j2 > jub) .or. (j2p1 < jlb) .or. (j2p1 > jub) .or. &
+                    (k1 < klb) .or. (k1 > kub) .or. (k2 < klb) .or. (k2 > kub)) then
+                  print *, "DEPOSIT_TRACE: OOB indices", " s=", s, " tile=", ti, tj, tk, " p=", p, &
+                           " i1/i2=", i1, i2, " j1/j2=", j1, j2, " k1/k2=", k1, k2, &
+                           " bounds i/j/k=", ilb, iub, jlb, jub, klb, kub, &
+                           " x1/x2=", x1, x2, " y1/y2=", y1, y2, " z1/z2=", z1, z2
+                  call throwError("DEPOSIT_TRACE: out-of-bounds deposit indices")
+                end if
+              end if
 
 ! this "function" takes
 ! ... the start and end coordinates: `x1`, `x2`, `y1`, `y2`, `z1`, `z2` ...

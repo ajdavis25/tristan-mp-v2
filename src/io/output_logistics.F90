@@ -215,7 +215,9 @@ contains
 #endif
     end do
 
-    call prepareSpectraForOutput()
+    if (spectra_enable) then
+      call prepareSpectraForOutput()
+    end if
     call defineFieldVarsToOutput()
 
     ! initialize domain output variables
@@ -239,6 +241,8 @@ contains
 #endif
 
     root_rnk = 0
+
+    if (.not. spectra_enable) return
 
     if (spec_dynamic_bins) then
       ! find global max energy
@@ -320,7 +324,9 @@ contains
               else
                 energy = sqrt(1.0 + u_**2 + v_**2 + w_**2) - 1.0
               end if
+              if (energy .ne. energy) cycle
               if (spec_log_bins) energy = log(energy + 1e-8)
+              if (energy .ne. energy) cycle
               if (energy .le. spec_min) then
                 spec_index = 1
               else if (energy .ge. spec_max) then
@@ -335,6 +341,9 @@ contains
               spec_x_index = INT(x_g * REAL(spec_nx) / REAL(global_mesh % sx)) + 1
               spec_y_index = INT(y_g * REAL(spec_ny) / REAL(global_mesh % sy)) + 1
               spec_z_index = INT(z_g * REAL(spec_nz) / REAL(global_mesh % sz)) + 1
+              if (spec_x_index .lt. 1) spec_x_index = 1
+              if (spec_y_index .lt. 1) spec_y_index = 1
+              if (spec_z_index .lt. 1) spec_z_index = 1
               if (spec_x_index .gt. spec_nx) spec_x_index = spec_nx
               if (spec_y_index .gt. spec_ny) spec_y_index = spec_ny
               if (spec_z_index .gt. spec_nz) spec_z_index = spec_nz

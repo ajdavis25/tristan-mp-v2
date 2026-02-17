@@ -172,7 +172,7 @@ contains
     end do
 
     call h5Pcreate_f(H5P_DATASET_XFER_F, plist_id, error)
-    call h5Pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, error)
+    call h5Pset_dxpl_mpio_f(plist_id, H5FD_MPIO_INDEPENDENT_F, error)
 
     do f = 1, n_fld_vars
       call prepareFieldForOutput(fld_vars(f), writing_lgarrQ)

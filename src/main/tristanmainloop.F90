@@ -45,14 +45,106 @@ module m_mainloop
   real(kind=8), private :: timers(20), d_timers(20)
   real(kind=8), private :: wall_t_start(1), wall_t(1)
   logical, private :: tmax_exceeded
+  logical, private, save :: nan_trace_enable = .false.
+  logical, private, save :: nan_trace_init = .false.
   !...............................................................!
 contains
+  subroutine maybeEnableNanTrace()
+    implicit none
+    character(len=32) :: env
+    integer :: stat
+    if (nan_trace_init) return
+    nan_trace_init = .true.
+    env = ''
+    call get_environment_variable('TRISTAN_NAN_TRACE', env, status=stat)
+    if (stat == 0) then
+      if (len_trim(env) > 0 .and. trim(env) /= '0') nan_trace_enable = .true.
+    end if
+  end subroutine maybeEnableNanTrace
+
+  subroutine nanTrace(tag, step)
+    implicit none
+    character(len=*), intent(in) :: tag
+    integer, intent(in) :: step
+    integer(kind=8) :: nan_e, nan_b, nan_j
+    integer(kind=8) :: nan_u, nan_v, nan_w
+    integer(kind=8) :: nan_dx, nan_dy, nan_dz
+    integer(kind=8) :: nan_e_g, nan_b_g, nan_j_g
+    integer(kind=8) :: nan_u_g, nan_v_g, nan_w_g
+    integer(kind=8) :: nan_dx_g, nan_dy_g, nan_dz_g
+    integer :: s, ti, tj, tk, ierr
+
+    if (.not. nan_trace_enable) return
+    if (step > 25) return
+
+    nan_e = 0; nan_b = 0; nan_j = 0
+    nan_u = 0; nan_v = 0; nan_w = 0
+    nan_dx = 0; nan_dy = 0; nan_dz = 0
+
+    nan_e = nan_e + count(.not.(ex == ex), kind=8)
+    nan_e = nan_e + count(.not.(ey == ey), kind=8)
+    nan_e = nan_e + count(.not.(ez == ez), kind=8)
+
+    nan_b = nan_b + count(.not.(bx == bx), kind=8)
+    nan_b = nan_b + count(.not.(by == by), kind=8)
+    nan_b = nan_b + count(.not.(bz == bz), kind=8)
+
+    nan_j = nan_j + count(.not.(jx == jx), kind=8)
+    nan_j = nan_j + count(.not.(jy == jy), kind=8)
+    nan_j = nan_j + count(.not.(jz == jz), kind=8)
+
+    do s = 1, nspec
+      do tk = 1, species(s) % tile_nz
+        do tj = 1, species(s) % tile_ny
+          do ti = 1, species(s) % tile_nx
+            nan_u = nan_u + count(.not.(species(s) % prtl_tile(ti, tj, tk) % u == &
+                                         species(s) % prtl_tile(ti, tj, tk) % u), kind=8)
+            nan_v = nan_v + count(.not.(species(s) % prtl_tile(ti, tj, tk) % v == &
+                                         species(s) % prtl_tile(ti, tj, tk) % v), kind=8)
+            nan_w = nan_w + count(.not.(species(s) % prtl_tile(ti, tj, tk) % w == &
+                                         species(s) % prtl_tile(ti, tj, tk) % w), kind=8)
+            nan_dx = nan_dx + count(.not.(species(s) % prtl_tile(ti, tj, tk) % dx == &
+                                           species(s) % prtl_tile(ti, tj, tk) % dx), kind=8)
+            nan_dy = nan_dy + count(.not.(species(s) % prtl_tile(ti, tj, tk) % dy == &
+                                           species(s) % prtl_tile(ti, tj, tk) % dy), kind=8)
+            nan_dz = nan_dz + count(.not.(species(s) % prtl_tile(ti, tj, tk) % dz == &
+                                           species(s) % prtl_tile(ti, tj, tk) % dz), kind=8)
+          end do
+        end do
+      end do
+    end do
+
+    call MPI_ALLREDUCE(nan_e, nan_e_g, 1, MPI_INTEGER8, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE(nan_b, nan_b_g, 1, MPI_INTEGER8, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE(nan_j, nan_j_g, 1, MPI_INTEGER8, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE(nan_u, nan_u_g, 1, MPI_INTEGER8, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE(nan_v, nan_v_g, 1, MPI_INTEGER8, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE(nan_w, nan_w_g, 1, MPI_INTEGER8, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE(nan_dx, nan_dx_g, 1, MPI_INTEGER8, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE(nan_dy, nan_dy_g, 1, MPI_INTEGER8, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE(nan_dz, nan_dz_g, 1, MPI_INTEGER8, MPI_SUM, MPI_COMM_WORLD, ierr)
+
+    if (mpi_rank == 0) then
+      if ((nan_e_g + nan_b_g + nan_j_g + nan_u_g + nan_v_g + nan_w_g + nan_dx_g + nan_dy_g + nan_dz_g) > 0) then
+        print *, "NAN_TRACE step=", step, " tag=", trim(tag), &
+                 "  E=", nan_e_g, " B=", nan_b_g, " J=", nan_j_g, &
+                 "  u/v/w=", nan_u_g, nan_v_g, nan_w_g, &
+                 "  dx/dy/dz=", nan_dx_g, nan_dy_g, nan_dz_g
+      end if
+    end if
+
+    if ((nan_e_g + nan_b_g + nan_j_g + nan_u_g + nan_v_g + nan_w_g + nan_dx_g + nan_dy_g + nan_dz_g) > 0) then
+      call throwError("NaN detected at step "//STR(step)//" during "//trim(tag)//" (set TRISTAN_NAN_TRACE=0 to disable checks).")
+    end if
+  end subroutine nanTrace
+
   subroutine mainloop()
     implicit none
     integer :: ierr
 
     call MPI_BARRIER(MPI_COMM_WORLD, ierr)
     call printDiag("Starting mainloop()", 0)
+    call maybeEnableNanTrace()
 
     ! timer numbering ([*] = optional):
     !  1 = full step
@@ -144,6 +236,7 @@ contains
       call startTimer(2)
       call moveParticles(timestep)
       call flushTimer(2)
+      call nanTrace("after moveParticles", timestep)
       !.................................................
 
       !-------------------------------------------------
@@ -151,6 +244,7 @@ contains
       call startTimer(9)
       call userDriveParticles(timestep)
       call flushTimer(9)
+      call nanTrace("after userDriveParticles", timestep)
       !.................................................
 
       !-------------------------------------------------
@@ -183,6 +277,7 @@ contains
         call advanceEFullstep()
       end if
       call flushTimer(8)
+      call nanTrace("after advanceEFullstep", timestep)
       !.................................................
 
       !-------------------------------------------------
@@ -192,6 +287,7 @@ contains
         call depositCurrents()
       end if
       call flushTimer(3)
+      call nanTrace("after depositCurrents", timestep)
       !.................................................
 
       !-------------------------------------------------
@@ -239,6 +335,7 @@ contains
         call addCurrents()
       end if
       call flushTimer(8)
+      call nanTrace("after addCurrents", timestep)
       !.................................................
 
       !-------------------------------------------------
