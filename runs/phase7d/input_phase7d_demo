@@ -1,0 +1,136 @@
+# ================================================================
+# phase 7D - localized-drive propagation isolate
+#
+# goal:
+#   isolate inward-to-outward transport by keeping the MRI drive active
+#   only in the inner band while leaving the outer wings passive.
+#
+# note:
+#   this is a redesign after phase 7C showed that a localized seed alone
+#   does not prevent nearly global synchronous response.
+# ================================================================
+
+<node_configuration>
+sizex = 8
+sizey = 4
+sizez = 2
+
+<time>
+last       = 7000
+c          = 0.45
+wall_t_max = 40000
+
+<grid>
+mx0   = 128
+my0   = 64
+mz0   = 32
+tileX = 16
+tileY = 16
+tileZ = 16
+resize_tiles = 1
+
+<algorithm>
+conserv     = 1
+highorder   = 0
+corr        = 1.0
+ntimes      = 4
+nfilter     = 1
+cleanfld    = 1
+cleanint    = 10
+cooling     = 0
+acool       = 0.0
+splitparts  = 0
+fieldsolver = 1
+currdeposit = 1
+
+<restart>
+irestart         = 0
+intrestart       = 0
+laprestart       = 0
+namedrestartint  = 1000000
+
+<output>
+enable           = 1
+params_enable    = 1
+prtl_enable      = 0
+flds_enable      = 1
+spec_enable      = 0
+diag_enable      = 1
+
+start            = 0
+interval         = 20
+stride           = 1
+istep            = 1
+
+smooth_window    = 2
+
+flds_write_every = 20
+prtl_write_every = 1000
+spec_write_every = 1000000
+
+write_xdmf       = 0
+
+hst_enable       = 1
+hst_interval     = 20
+
+<boundaries>
+periodicx = 1
+periodicy = 1
+periodicz = 1
+
+<domain>
+enlarge       = 0
+movwin        = 0
+shiftinterval = 20
+shiftstart    = 1000
+movwingam     = 5.0
+
+<fields>
+bhtheta = 0
+bphi    = 0
+
+<particles>
+maxptl1 = 5e6
+maxptl2 = 5e6
+m1      = 1.0
+m2      = 1.0
+ch1     = 1.0
+ch2     = -1.0
+output_fld1  = 0
+output_fld2  = 0
+
+<plasma>
+sigma   = 0.1
+maxptl0 = 5e6
+ppc0    = 16
+delgam  = 0.0
+gamma0  = 1.0
+c_omp   = 10
+me      = 1.0
+mi      = 1.0
+
+<problem>
+caseinit            = 0
+temperature_ratio   = 1.0
+
+external_fields     = 0
+
+backgr_T_inner      = 1.0
+backgr_T_outer      = 1.0
+beam_T              = 0.0
+beam_density        = 0.0
+plasma_beta         = 0.0
+
+B0_ext              = 0.06
+Omega               = 0.004
+q_shear             = 1.5
+
+enable_rotation     = 1
+drive_inner_only    = 1
+enable_perturbation = 1
+perturb_inner_only  = 1
+eps_pert            = 0.01
+
+inner_xmin_frac       = 0.30
+inner_xmax_frac       = 0.70
+transition_width_frac = 0.10
